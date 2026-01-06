@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>ShoppingGate Flutter SDK – iOS Native Integration Guide</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, #2563eb, #1e40af);
+      color: #fff;
+      padding: 40px 24px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 32px;
+    }
+
+    header p {
+      margin-top: 8px;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px;
+    }
+
+    section {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    section h2 {
+      margin-top: 0;
+      color: #2563eb;
+      font-size: 22px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+    }
+
+    section h3 {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    ul {
+      padding-left: 20px;
+    }
+
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #2563eb;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+
+    .warning-box {
+      background: #fff7ed;
+      border-left: 4px solid #fdba74;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 16px;
+    }
+
+    .code-block {
+      background: #0b1020;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      margin-top: 12px;
+    }
+
+    .tree {
+      background: #f1f5f9;
+      padding: 16px;
+      border-radius: 10px;
+      font-family: Menlo, Monaco, Consolas, monospace;
+      font-size: 14px;
+      border: 1px solid #e2e8f0;
+      margin-top: 12px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      font-size: 14px;
+      color: #64748b;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>ShoppingGate Flutter SDK</h1>
+  <p>iOS Native Integration Guide (UIKit)</p>
+</header>
+
+<main>
+
+  <section>
+    <h2>1. Prerequisites</h2>
+    <ul>
+      <li><strong>iOS Deployment Target:</strong> 16.1+</li>
+      <li><strong>Xcode Version:</strong> 15.0+</li>
+    </ul>
+
+    <div class="info-box">
+      Ensure your environment matches the above versions to avoid build issues.
+    </div>
+  </section>
+
+  <section>
+    <h2>2. API & Required Parameters</h2>
+    <ul>
+      <li><strong>Google Maps API Key</strong> – Used for location services</li>
+      <li><strong>User Mobile Number</strong> – Required for authentication</li>
+    </ul>
+
+    <div class="warning-box">
+      Detailed API-level documentation will be provided in a future SDK release.
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Repository Setup</h2>
+    <p>
+      The SDK is delivered as a local Flutter module.  
+      Place the <strong>flutter_module</strong> directory at the project root.
+    </p>
+
+    <div class="tree">
+<pre>
+project-root/
+├── ios-native-app/
+│   └── Podfile
+└── flutter_module/
+    ├── .ios/
+    └── lib/
+</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. Podfile Configuration</h2>
+    <div class="code-block">
+      <pre>
+<code>flutter_application_path = '../flutter_module'
+load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
+
+platform :ios, '15.0'
+
+target 'ios-native-app' do
+  use_frameworks! :linkage => :static
+  use_modular_headers!
+
+  install_all_flutter_pods(flutter_application_path)
+end
+
+post_install do |installer|
+  flutter_post_install(installer)
+end
+        </code>
+      </pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>5. Set LLDB Init File</h2>
+    <ol>
+      <li>Go to <strong>Product &gt; Scheme &gt; Edit Scheme</strong>.</li>
+      <li>Select the <strong>Run</strong> section in the left sidebar.</li>
+      <li>Set the <strong>LLDB Init File</strong> using the same relative path to your Flutter application as you put in your Podfile in the Update your Podfile section:</li>
+    </ol>
+    <div class="code-block">
+      <pre><code>$(SRCROOT)/../my_flutter/.ios/Flutter/ephemeral/flutter_lldbinit</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>6. Mitigate known issue with Apple Silicon Macs</h2>
+    <p>
+      On Macs running Apple Silicon, the host app builds for an <strong>arm64</strong> simulator. While Flutter supports arm64 simulators, some plugins might not. If you use one of these plugins, you might see a compilation error like <strong>Undefined symbols for architecture arm64</strong>. If this occurs, exclude <strong>arm64</strong> from the simulator architectures in your host app.
+    </p>
+    <ol>
+      <li>In the Project Navigator, click on your project.</li>
+      <li>Click the <strong>Build Settings</strong> tab.</li>
+      <li>Click <strong>All</strong> and <strong>Combined</strong> sub-tabs.</li>
+      <li>Under <strong>Architectures</strong>, click on <strong>Excluded Architectures</strong>.</li>
+      <li>Expand to see the available build configurations.</li>
+      <li>Click <strong>Debug</strong>.</li>
+      <li>Click the <strong>+</strong> (plus sign).</li>
+      <li>Select <strong>iOS Simulator</strong>.</li>
+      <li>Double-click in the value column for <strong>Any iOS Simulator SDK</strong>.</li>
+      <li>Click the <strong>+</strong> (plus sign).</li>
+      <li>Type <code>arm64</code> in the Debug &gt; Any iOS Simulator SDK dialog box.</li>
+    </ol>
+    <div class="info-box">
+      <strong>Tip:</strong> See the screenshot below for reference.
+    </div>
+    <img src="excluded-archs.png" alt="Xcode Exclude arm64 from Simulator Architectures" style="margin-top:16px;max-width:100%;border-radius:8px;border:1px solid #e2e8f0;" />
+  </section>
+
+  <section>
+    <h2>6. Host Configuration</h2>
+
+    <h3>AppDelegate</h3>
+    <div class="code-block">
+<pre><code>import UIKit
+import Flutter
+import FlutterPluginRegistrant
+
+@UIApplicationMain
+class AppDelegate: FlutterAppDelegate {
+
+  lazy var flutterEngine = FlutterEngine(name: "my_flutter_engine")
+
+  override func application(
+    _ application: UIApplication,
+    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+  ) -> Bool {
+
+    flutterEngine.run()
+    GeneratedPluginRegistrant.register(with: flutterEngine)
+    return true
+  }
+}
+</code></pre>
+    </div>
+
+    <h3>View Controller</h3>
+    <div class="code-block">
+<pre><code>import Flutter
+
+let flutterEngine = (UIApplication.shared.delegate as! AppDelegate).flutterEngine
+let flutterVC = FlutterViewController(engine: flutterEngine, nibName: nil, bundle: nil)
+present(flutterVC, animated: true)
+</code></pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Disclaimer</h2>
+    <p>
+      This document is a preliminary draft.  
+      APIs and configuration details may change in future SDK versions.
+    </p>
+  </section>
+
+</main>
+
+<footer>
+  © 2026 ShoppingGate SDK · iOS Native Integration Guide
+</footer>
+
+</body>
+</html>
