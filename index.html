@@ -1,276 +1,763 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
+
 <head>
-  <meta charset="UTF-8" />
-  <title>ShoppingGate Flutter SDK – iOS Native Integration Guide</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShoppingGate SDK | iOS Developer Portal</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #f8fafc;
-      color: #0f172a;
-      line-height: 1.6;
-    }
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
 
-    header {
-      background: linear-gradient(135deg, #2563eb, #1e40af);
-      color: #fff;
-      padding: 40px 24px;
-    }
+    <!-- Icons & Highlighting -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark-dimmed.min.css"
+        id="hljs-theme">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/swift.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/ruby.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
 
-    header h1 {
-      margin: 0;
-      font-size: 32px;
-    }
+    <style>
+        :root {
+            /* Dark Theme (Default - Indigo Deep) */
+            --bg-body: #0f1115;
+            --bg-side: #161920;
+            --bg-card: #1c212c;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border: #2d3748;
+            --primary: #6366f1;
+            --primary-hover: #818cf8;
+            --primary-glow: rgba(99, 102, 241, 0.15);
+            --code-bg: #0d1117;
+            --callout-bg: rgba(245, 158, 11, 0.1);
+            --callout-border: #f59e0b;
+            --sidebar-active: rgba(99, 102, 241, 0.1);
+        }
 
-    header p {
-      margin-top: 8px;
-      font-size: 16px;
-      opacity: 0.9;
-    }
+        [data-theme="light"] {
+            --bg-body: #f8fafc;
+            --bg-side: #ffffff;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --primary-glow: rgba(79, 70, 229, 0.1);
+            --code-bg: #0f172a;
+            --callout-bg: #fffbeb;
+            --callout-border: #d97706;
+            --sidebar-active: #f1f5f9;
+        }
 
-    main {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 32px 20px;
-    }
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.2s, border-color 0.2s, color 0.1s;
+        }
 
-    section {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 24px;
-      margin-bottom: 24px;
-    }
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
 
-    section h2 {
-      margin-top: 0;
-      color: #2563eb;
-      font-size: 22px;
-      border-bottom: 1px solid #e2e8f0;
-      padding-bottom: 8px;
-    }
+        /* --- Sidebar --- */
+        aside {
+            width: 280px;
+            height: 100vh;
+            background: var(--bg-side);
+            border-right: 1px solid var(--border);
+            position: fixed;
+            padding: 1.5rem;
+            overflow-y: auto;
+            z-index: 100;
+        }
 
-    section h3 {
-      margin-top: 20px;
-      font-size: 18px;
-    }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 2.5rem;
+            padding-left: 0.5rem;
+        }
 
-    ul {
-      padding-left: 20px;
-    }
+        .brand i {
+            color: var(--primary);
+        }
 
-    .info-box {
-      background: #eff6ff;
-      border-left: 4px solid #2563eb;
-      padding: 16px;
-      border-radius: 8px;
-      margin-top: 16px;
-    }
+        .nav-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin: 1.5rem 0 0.5rem 0.8rem;
+            font-weight: 700;
+        }
 
-    .warning-box {
-      background: #fff7ed;
-      border-left: 4px solid #fdba74;
-      padding: 16px;
-      border-radius: 8px;
-      margin-top: 16px;
-    }
+        aside ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
 
-    .code-block {
-      background: #0b1020;
-      color: #e5e7eb;
-      padding: 16px;
-      border-radius: 10px;
-      overflow-x: auto;
-      font-family: Menlo, Monaco, Consolas, monospace;
-      font-size: 14px;
-      margin-top: 12px;
-    }
+        aside a {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 0.8rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.875rem;
+            border-radius: 8px;
+            margin-bottom: 2px;
+            font-weight: 500;
+        }
 
-    .tree {
-      background: #f1f5f9;
-      padding: 16px;
-      border-radius: 10px;
-      font-family: Menlo, Monaco, Consolas, monospace;
-      font-size: 14px;
-      border: 1px solid #e2e8f0;
-      margin-top: 12px;
-    }
+        aside a:hover {
+            background: var(--sidebar-active);
+            color: var(--primary);
+        }
 
-    footer {
-      text-align: center;
-      padding: 24px;
-      font-size: 14px;
-      color: #64748b;
-    }
-  </style>
+        aside a.active {
+            background: var(--sidebar-active);
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* --- Main Content --- */
+        main {
+            margin-left: 280px;
+            padding: 2rem 5% 5rem 5%;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        #prerequisites,
+        #credentials,
+        #framework-setup,
+        #podfile,
+        #info-plist,
+        #implementation,
+        #troubleshooting,
+        #downloads {
+            scroll-margin-top: 50px;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: flex-end;
+            padding: 1rem 0;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        .theme-toggle {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 8px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--primary);
+        }
+
+        header h1 {
+            font-size: 2.75rem;
+            margin: 0;
+            letter-spacing: -0.03em;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--text-main), var(--text-muted));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-top: 0.75rem;
+            max-width: 700px;
+        }
+
+        h2 {
+            font-size: 1.75rem;
+            margin-top: 5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        h2::before {
+            content: "";
+            width: 4px;
+            height: 24px;
+            background: var(--primary);
+            border-radius: 4px;
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            margin-top: 2.5rem;
+            color: var(--text-main);
+            font-weight: 600;
+        }
+
+        /* --- Code Blocks --- */
+        .code-wrap {
+            margin: 1.5rem 0;
+            border-radius: 12px;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .code-header {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .code-dots {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .code-dots span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .code-dots span:nth-child(1) {
+            background: #ff5f56;
+        }
+
+        .code-dots span:nth-child(2) {
+            background: #ffbd2e;
+        }
+
+        .code-dots span:nth-child(3) {
+            background: #27c93f;
+        }
+
+        .code-dots span.filename {
+            background: transparent;
+            width: auto;
+            height: auto;
+            border-radius: 0;
+        }
+
+        .code-header span.filename {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: 10px;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        pre {
+            margin: 0 !important;
+            padding: 1.25rem !important;
+        }
+
+        code {
+            font-family: 'JetBrains Mono', monospace !important;
+            font-weight: 500 !important;
+            font-size: 0.90rem !important;
+        }
+
+        .hljs {
+            color: #adbac7 !important;
+            background: transparent !important;
+        }
+
+        /* --- Cards & UI --- */
+        .file-tree {
+            background: var(--bg-card);
+            padding: 1.25rem;
+            border-radius: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+
+        .badge {
+            background: var(--primary-glow);
+            color: var(--primary);
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid var(--primary);
+            margin-left: 10px;
+        }
+
+        .callout {
+            background: var(--callout-bg);
+            border-left: 4px solid var(--callout-border);
+            padding: 1.25rem;
+            border-radius: 8px;
+            margin: 2.5rem 0;
+            display: flex;
+            gap: 15px;
+        }
+
+        .callout i {
+            color: var(--callout-border);
+            flex-shrink: 0;
+        }
+
+        .download-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.25rem;
+            margin: 2rem 0;
+        }
+
+        .download-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 1.75rem;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .download-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.3);
+        }
+
+        .download-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-top: 1.5rem;
+        }
+
+        .download-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .download-btn.secondary {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .download-btn.secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        ul li {
+            margin-bottom: 0.75rem;
+        }
+
+        @media (max-width: 1024px) {
+            aside {
+                display: none;
+            }
+
+            main {
+                margin-left: 0;
+                padding: 2rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
 
-<header>
-  <h1>ShoppingGate Flutter SDK</h1>
-  <p>iOS Native Integration Guide (UIKit)</p>
-</header>
+    <aside>
+        <div class="brand">
+            <i data-lucide="shopping-bag" size="24"></i>
+            ShoppingGate
+        </div>
 
-<main>
+        <div class="nav-label">Resources</div>
+        <ul>
+            <li><a href="#downloads" class="active"><i data-lucide="download" size="16" style="margin-right:8px"></i>
+                    SDK Downloads</a></li>
+        </ul>
 
-  <section>
-    <h2>1. Prerequisites</h2>
-    <ul>
-      <li><strong>iOS Deployment Target:</strong> 16.1+</li>
-      <li><strong>Xcode Version:</strong> 15.0+</li>
-    </ul>
+        <div class="nav-label">Getting Started</div>
+        <ul>
+            <li><a href="#prerequisites">1. Prerequisites</a></li>
+            <li><a href="#credentials">2. API & Credentials</a></li>
+            <li><a href="#framework-setup">3. Framework Setup</a></li>
+        </ul>
 
-    <div class="info-box">
-      Ensure your environment matches the above versions to avoid build issues.
-    </div>
-  </section>
+        <div class="nav-label">Configuration</div>
+        <ul>
+            <li><a href="#podfile">4. Podfile Configuration</a></li>
+            <li><a href="#info-plist">5. Info.plist & Permissions</a></li>
+        </ul>
 
-  <section>
-    <h2>2. API & Required Parameters</h2>
-    <ul>
-      <li><strong>Google Maps API Key</strong> – Used for location services</li>
-      <li><strong>User Mobile Number</strong> – Required for authentication</li>
-    </ul>
+        <div class="nav-label">Usage</div>
+        <ul>
+            <li><a href="#implementation">6. Implementation</a></li>
+            <li><a href="#troubleshooting">7. Troubleshooting</a></li>
+        </ul>
+    </aside>
 
-    <div class="warning-box">
-      Detailed API-level documentation will be provided in a future SDK release.
-    </div>
-  </section>
+    <main>
+        <div class="top-bar">
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <i data-lucide="moon" id="theme-icon" size="16"></i>
+                <span id="theme-text">Dark Mode</span>
+            </button>
+        </div>
 
-  <section>
-    <h2>3. Repository Setup</h2>
-    <p>
-      The SDK is delivered as a local Flutter module.  
-      Place the <strong>flutter_module</strong> directory at the project root.
-    </p>
+        <header>
+            <h1>ShoppingGate Flutter SDK For iOS Native</h1>
+            <h3>iOS Native Integration Guide (Framework).</h3>
+            <p>Complete technical guide for embedding the ShoppingGate SDK into native iOS apps using Swift UIKit.</p>
+        </header>
 
-    <div class="tree">
-<pre>
-project-root/
-├── ios-native-app/
-│   └── Podfile
-└── flutter_module/
-    ├── .ios/
-    └── lib/
-</pre>
-    </div>
-  </section>
+        <section id="downloads">
+            <h2>SDK Downloads</h2>
+            <div class="download-grid">
+                <div class="download-card">
+                    <div>
+                        <div style="margin-bottom: 1rem;"><i data-lucide="box" style="color: var(--primary)"></i></div>
+                        <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Core Flutter Framework</strong>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Compiled XCFramework artifacts, engine binaries, and required assets.</p>
+                    </div>
+                    <a href="https://drive.google.com/file/d/1f-53w786nQixiWrtX1J_9ScK8IbJ9kSR/view?usp=sharing" class="download-btn" target="_blank">
+    <i data-lucide="download" size="18"></i> Download SDK
+</a>
+                </div>
 
-  <section>
-    <h2>4. Podfile Configuration</h2>
-    <div class="code-block">
-      <pre>
-<code>flutter_application_path = '../flutter_module'
-load File.join(flutter_application_path, '.ios', 'Flutter', 'podhelper.rb')
+                <div class="download-card">
+                    <div>
+                        <div style="margin-bottom: 1rem;"><i data-lucide="code-2" style="color: var(--primary)"></i></div>
+                        <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Reference Project</strong>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Xcode starter project with boilerplate UIKit implementation.</p>
+                    </div>
+                    <a href="https://drive.google.com/file/d/1zDqYyvkPHkpzFRaW153sAD3Agxpi5458/view?usp=sharing" class="download-btn secondary" target="_blank">
+                        <i data-lucide="external-link" size="18"></i> View Samples
+                    </a>
+                </div>
+            </div>
+        </section>
 
-platform :ios, '15.0'
+        <section id="prerequisites">
+            <h2>1. Prerequisites</h2>
+            <p>Verification of the following environment settings is required for a successful build:</p>
+            <ul style="list-style-type: none; padding-left: 0;">
+                <li style="display: flex; align-items: center; gap: 10px;">
+                    <i data-lucide="check-circle-2" size="18" style="color: #10b981;"></i>
+                    <span><strong>Xcode 15.0+</strong> <span class="badge">Required</span></span>
+                </li>
+                <!-- <li style="display: flex; align-items: center; gap: 10px;">
+                    <i data-lucide="check-circle-2" size="18" style="color: #10b981;"></i>
+                    <span><strong>CocoaPods 1.12+</strong> or Swift Package Manager</span>
+                </li> -->
+                <li style="display: flex; align-items: center; gap: 10px;">
+                    <i data-lucide="check-circle-2" size="18" style="color: #10b981;"></i>
+                    <span><strong>Deployment Target:</strong> iOS 16.1+</span>
+                </li>
+                <li style="display: flex; align-items: center; gap: 10px;">
+                    <i data-lucide="check-circle-2" size="18" style="color: #10b981;"></i>
+                    <span><strong>Swift 5.9+</strong></span>
+                </li>
+            </ul>
+        </section>
 
-target 'ios-native-app' do
-  use_frameworks! :linkage => :static
-  use_modular_headers!
+        <section id="credentials">
+            <h2>2. API & Required Parameters</h2>
+            <p>To initialize the SDK, you must have the following configuration parameters ready:</p>
+            <div class="file-tree">
+                <span style="color: var(--primary)">●</span> <strong>Google Maps API Key:</strong> Required for location services.<br>
+                <span style="color: var(--primary)">●</span> <strong>User Mobile Number:</strong> Session authentication.
+            </div>
 
-  install_all_flutter_pods(flutter_application_path)
-end
+            <!-- <div class="callout">
+                <i data-lucide="alert-circle" size="20"></i>
+                <div>
+                    <strong>Maps Restriction:</strong> Ensure the Google Maps API Key has "Maps SDK for iOS" enabled and is restricted to your app's bundle identifier.
+                </div>
+            </div> -->
+        </section>
 
-post_install do |installer|
-  flutter_post_install(installer)
-end
-        </code>
-      </pre>
-    </div>
-  </section>
+        <section id="framework-setup">
+            <h2>3. Framework Setup</h2>
+            <p>Place the <strong><code>FlutterSDK</code></strong> folder containing the .podspec file in your project's root directory</p>
+            <div class="file-tree">
+                Project-Root/<br>
+                ├── <span style="color: var(--primary); font-weight: 600;">FlutterSDK/</span> <-- Flutter SDK folder<br>
+                │   ├── FlutterSDK.podspec <br>
+                │   └── Frameworks/ <br>
+                │       └── *.xcframework files <br>
+                ├── ShoppingGateSDKDemo/ <br>
+                ├── Podfile <br>
+                ├── Podfile.lock <br>
+                ├── Pods/ <br>
+                ├── ShoppingGateSDKDemo.xcodeproj <br>
+                └── ShoppingGateSDKDemo.xcworkspace
+            </div>
 
-  <section>
-    <h2>5. Set LLDB Init File</h2>
-    <ol>
-      <li>Go to <strong>Product &gt; Scheme &gt; Edit Scheme</strong>.</li>
-      <li>Select the <strong>Run</strong> section in the left sidebar.</li>
-      <li>Set the <strong>LLDB Init File</strong> using the same relative path to your Flutter application as you put in your Podfile in the Update your Podfile section:</li>
-    </ol>
-    <div class="code-block">
-      <pre><code>$(SRCROOT)/../my_flutter/.ios/Flutter/ephemeral/flutter_lldbinit</code></pre>
-    </div>
-  </section>
+            <div class="callout">
+                <i data-lucide="info" size="20"></i>
+                <div>
+                    <strong>Local Pod:</strong> The SDK is integrated as a local CocoaPod using the .podspec file. Use same folder structure for Flutter module XCFrameworks in the <code>FlutterSDK/Frameworks/</code> directory.
+                </div>
+            </div>
+        </section>
 
-  <section>
-    <h2>6. Mitigate known issue with Apple Silicon Macs</h2>
-    <p>
-      On Macs running Apple Silicon, the host app builds for an <strong>arm64</strong> simulator. While Flutter supports arm64 simulators, some plugins might not. If you use one of these plugins, you might see a compilation error like <strong>Undefined symbols for architecture arm64</strong>. If this occurs, exclude <strong>arm64</strong> from the simulator architectures in your host app.
-    </p>
-    <ol>
-      <li>In the Project Navigator, click on your project.</li>
-      <li>Click the <strong>Build Settings</strong> tab.</li>
-      <li>Click <strong>All</strong> and <strong>Combined</strong> sub-tabs.</li>
-      <li>Under <strong>Architectures</strong>, click on <strong>Excluded Architectures</strong>.</li>
-      <li>Expand to see the available build configurations.</li>
-      <li>Click <strong>Debug</strong>.</li>
-      <li>Click the <strong>+</strong> (plus sign).</li>
-      <li>Select <strong>iOS Simulator</strong>.</li>
-      <li>Double-click in the value column for <strong>Any iOS Simulator SDK</strong>.</li>
-      <li>Click the <strong>+</strong> (plus sign).</li>
-      <li>Type <code>arm64</code> in the Debug &gt; Any iOS Simulator SDK dialog box.</li>
-    </ol>
-    <div class="info-box">
-      <strong>Tip:</strong> See the screenshot below for reference.
-    </div>
-    <img src="excluded-archs.png" alt="Xcode Exclude arm64 from Simulator Architectures" style="margin-top:16px;max-width:100%;border-radius:8px;border:1px solid #e2e8f0;" />
-  </section>
+        <section id="podfile">
+            <h2>4. Podfile Configuration</h2>
+            <p>Reference the local ShoppingGateSDK.podspec in your Podfile</p>
 
-  <section>
-    <h2>6. Host Configuration</h2>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">Podfile</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-ruby">platform :ios, '16.1'
 
-    <h3>AppDelegate</h3>
-    <div class="code-block">
-<pre><code>import UIKit
+target 'YourApp' do
+  use_frameworks!
+
+  # Local ShoppingGate SDK (includes Flutter engine and dependencies)
+  pod 'FlutterSDK', :path => './FlutterSDK'
+end</code></pre>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Example ShoppingGateSDK.podspec</h3>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ShoppingGateSDK/ShoppingGateSDK.podspec</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-ruby">
+Pod::Spec.new do |s|
+  s.name             = 'FlutterSDK'
+  s.version          = '1.0.0'
+  s.summary          = 'High-performance Flutter module for native iOS integration.'
+  s.description      = 'This SDK bundles the Flutter engine and your custom module logic.'
+  s.homepage         = 'https://yourcompany.com'
+  s.license          = { :type => 'MIT', :file => 'LICENSE' }
+  s.author           = { 'Your Team' => 'dev@yourcompany.com' }
+  s.source           = { :path => '.' } # Points to the local folder
+
+  s.ios.deployment_target = '16.1'
+
+  # 1. Link your Flutter frameworks
+  # This tells CocoaPods to include all xcframeworks inside the Frameworks folder
+  s.vendored_frameworks = 'Frameworks/*.xcframework'
+
+  # 2. Declare External Dependencies
+  # This fixes the "Undefined Symbol" errors by downloading the actual SDKs
+  s.dependency 'FirebaseAnalytics'
+  s.dependency 'GoogleMaps'
+
+  # 3. Ensure the Linker Flag is set
+  s.pod_target_xcconfig = { 'OTHER_LDFLAGS' => '-ObjC' }
+  
+  s.static_framework = true
+end    
+                </code></pre>
+            </div>
+
+            <p style="margin-top: 1.5rem;">After updating Podfile, run:</p>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">Terminal</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-bash">pod install</code></pre>
+            </div>
+
+            <div class="callout" style="background: rgba(37, 99, 235, 0.05); border-color: var(--primary); margin-top: 2rem;">
+                <i data-lucide="lightbulb" size="20" style="color: var(--primary)"></i>
+                <div>
+                    <strong>Pro Tip:</strong> Using .podspec allows automatic dependency management. All required Flutter plugins and frameworks are resolved automatically through the podspec file.
+                </div>
+            </div>
+        </section>
+
+        <section id="info-plist">
+            <h2>5. Info.plist & Permissions</h2>
+            <p>Add required permissions and Google Maps API Key to Info.plist</p>
+
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">Info.plist</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
+&lt;plist version="1.0"&gt;
+&lt;dict&gt;
+    &lt;!-- Google Maps API Key --&gt;
+    &lt;key&gt;GMSApiKey&lt;/key&gt;
+    &lt;string&gt;YOUR_MAPS_KEY_HERE&lt;/string&gt;
+    
+    &lt;!-- Location Permissions --&gt;
+    &lt;key&gt;NSLocationWhenInUseUsageDescription&lt;/key&gt;
+    &lt;string&gt;We need your location to show nearby stores&lt;/string&gt;
+    
+    &lt;key&gt;NSLocationAlwaysAndWhenInUseUsageDescription&lt;/key&gt;
+    &lt;string&gt;We need your location to show nearby stores&lt;/string&gt;
+    
+    &lt;!-- Camera & Photo Library --&gt;
+    &lt;key&gt;NSCameraUsageDescription&lt;/key&gt;
+    &lt;string&gt;We need camera access to capture product photos&lt;/string&gt;
+    
+    &lt;key&gt;NSPhotoLibraryUsageDescription&lt;/key&gt;
+    &lt;string&gt;We need photo library access to select images&lt;/string&gt;
+    
+    &lt;key&gt;NSPhotoLibraryAddUsageDescription&lt;/key&gt;
+    &lt;string&gt;We need permission to save photos&lt;/string&gt;
+&lt;/dict&gt;
+&lt;/plist&gt;</code></pre>
+            </div>
+        </section>
+
+        <section id="implementation">
+            <h2>6. Launching the SDK</h2>
+            <p>Implement FlutterViewController to launch the ShoppingGate SDK with user authentication</p>
+
+            <h3>A. AppDelegate Setup</h3>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">AppDelegate.swift</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-swift">import UIKit
 import Flutter
-import FlutterPluginRegistrant
+import GoogleMaps
 
-@UIApplicationMain
-class AppDelegate: FlutterAppDelegate {
+@main
+class AppDelegate: UIResponder, UIApplicationDelegate {
+    
+    lazy var flutterEngine = FlutterEngine(name: "ShoppingGateEngine")
+    
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        
+        // Initialize Google Maps
+        GMSServices.provideAPIKey("YOUR_MAPS_KEY_HERE")
+        
+        // Pre-warm Flutter engine for faster startup
+        flutterEngine.run()
+        
+        return true
+    }
+}</code></pre>
+            </div>
 
-  lazy var flutterEngine = FlutterEngine(name: "my_flutter_engine")
+            <h3>B. ViewController Implementation</h3>
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ViewController.swift</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-swift">import UIKit
+import Flutter
 
-  override func application(
-    _ application: UIApplication,
-    didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-  ) -> Bool {
-
-    flutterEngine.run()
-    GeneratedPluginRegistrant.register(with: flutterEngine)
-    return true
-  }
-}
-</code></pre>
-    </div>
-
-    <h3>View Controller</h3>
-    <div class="code-block">
-<pre><code>import Flutter
-
-let flutterEngine = (UIApplication.shared.delegate as! AppDelegate).flutterEngine
-let flutterVC = FlutterViewController(engine: flutterEngine, nibName: nil, bundle: nil)
-present(flutterVC, animated: true)
-</code></pre>
-    </div>
-  </section>
-
-  <section>
-    <h2>Disclaimer</h2>
-    <p>
-      This document is a preliminary draft.  
-      APIs and configuration details may change in future SDK versions.
-    </p>
-  </section>
-
-</main>
-
-<footer>
-  © 2026 ShoppingGate SDK · iOS Native Integration Guide
-</footer>
-
-</body>
-</html>
+class ViewController: UIViewController {
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        // Setup Launch Button
+        let launchButton = UIButton(type: .system)
+        launchButton.setTitle("Launch ShoppingGate", for: .normal)
+        launchButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
+        launchButton.backgroundColor = .systemIndigo
+        launchButton.setTitleColor(.white, for: .normal)
+        launchButton.layer.cornerRadius = 12
+        launchButton.translatesAutoresizingMaskIntoConstraints = false
+        launchButton.addTarget(self, action: #selector(launchSDK), for: .touchUpInside)
+        
+        view.addSubview(launchButton)
+        
+        NSLayoutConstraint.activate([
+            launchButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            launchButton.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            launchButton.widthAnchor.constraint(equalToConstant: 240),
+            launchButton.heightAnchor.constraint(equalToConstant: 50)
+        ])
+    }
+    
+    @objc func launchSDK() {
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
+            return
+        }
+        
+        // Create Flutter view controller with initial route
+        let flutterViewController = FlutterViewController(
+            engine: appDelegate.flutterEngine,
+            nibName: nil,
+            bundle: nil
+        )
+        
+        navigationController?.pushViewController(flutterViewController, animated: true)
+    }
+}</code></pre>
+            </div>
