@@ -658,35 +658,28 @@ end
 
         <section id="implementation">
             <h2>6. Launching the SDK</h2>
-            <p>Implement FlutterViewController to launch the ShoppingGate SDK with user authentication</p>
+            <p>Implement FlutterViewController to launch the ShoppingGate SDK.</p>
 
-            <h3>A. AppDelegate Setup</h3>
+            <h3>A. FlutterEngineManager Setup</h3>
             <div class="code-wrap">
                 <div class="code-header">
-                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">AppDelegate.swift</span></div>
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">FlutterViewController.swift</span></div>
                     <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
                 </div>
                 <pre><code class="language-swift">import UIKit
 import Flutter
-import GoogleMaps
+import FlutterPluginRegistrant
 
-@main
-class AppDelegate: UIResponder, UIApplicationDelegate {
-    
-    lazy var flutterEngine = FlutterEngine(name: "ShoppingGateEngine")
-    
-    func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-        
-        // Initialize Google Maps
-        GMSServices.provideAPIKey("YOUR_MAPS_KEY_HERE")
-        
-        // Pre-warm Flutter engine for faster startup
-        flutterEngine.run()
-        
-        return true
+final class FlutterEngineManager {
+    static let shared = FlutterEngineManager()
+
+    let engine: FlutterEngine
+
+    private init() {
+        engine = FlutterEngine(name: "ShoppingGateEngine")
+
+        engine.run()
+        GeneratedPluginRegistrant.register(with: engine);
     }
 }</code></pre>
             </div>
@@ -698,7 +691,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                     <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
                 </div>
                 <pre><code class="language-swift">import UIKit
-import Flutter
 
 class ViewController: UIViewController {
     
@@ -726,18 +718,11 @@ class ViewController: UIViewController {
     }
     
     @objc func launchSDK() {
-        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else {
-            return
-        }
-        
-        // Create Flutter view controller with initial route
-        let flutterViewController = FlutterViewController(
-            engine: appDelegate.flutterEngine,
-            nibName: nil,
-            bundle: nil
-        )
-        
-        navigationController?.pushViewController(flutterViewController, animated: true)
+        let flutterViewController =
+        FlutterViewController(engine: FlutterEngineManager.shared.engine,
+                              nibName: nil,
+                              bundle: nil)
+        self.navigationController?.pushViewController(flutterViewController, animated: true)
     }
 }</code></pre>
             </div>
