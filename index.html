@@ -452,7 +452,7 @@
                         <p style="font-size: 0.85rem; color: var(--text-muted);">For development and testing purposes only.</p>
                 
                     </div>
-                    <a href="https://drive.google.com/file/d/1Yj-Atnhq06ZB1ihqnuT5y4VSgZhgIKGX/view?usp=sharing" class="download-btn" target="_blank">
+                    <a href="https://drive.google.com/file/d/1bFuuPGoINyVRBoczdv0QXlvLEwu3ZzSN/view?usp=share_link" class="download-btn" target="_blank">
     <i data-lucide="download" size="18"></i> Download Debug SDK
 </a>
                 </div>
@@ -464,7 +464,7 @@
                         <p style="font-size: 0.85rem; color: var(--text-muted);">Compiled XCFramework artifacts, engine binaries, and required assets.</p>
                         <p style="font-size: 0.85rem; color: var(--text-muted);">For production and App Store purposes only — use on physical devices only (not simulator).</p>
                     </div>
-                    <a href="https://drive.google.com/file/d/1L3t8ViEQZoAWX8H8pWOaM2Iyno0vMfsc/view?usp=sharing" class="download-btn" target="_blank">
+                    <a href="https://drive.google.com/file/d/1XDz8T0iAuYG529WZkj4i9TAt_Ng9DOOu/view?usp=share_link" class="download-btn" target="_blank">
     <i data-lucide="download" size="18"></i> Download Release SDK
 </a>
                 </div>
@@ -472,10 +472,14 @@
                 <div class="download-card">
                     <div>
                         <div style="margin-bottom: 1rem;"><i data-lucide="code-2" style="color: var(--primary)"></i></div>
-                        <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Reference Project</strong>
+                        <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Reference iOS Project</strong>
                         <p style="font-size: 0.85rem; color: var(--text-muted);">Xcode starter project with boilerplate UIKit implementation.</p>
+                        <div style="background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b; padding: 0.75rem 1rem; border-radius: 7px; margin-top: 0.7rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: flex-start; gap: 8px;">
+                            <i data-lucide="alert-triangle" size="16" style="color: #f59e0b; margin-top: 2px;"></i>
+                            <span>Reference project is made with <strong>debug build</strong> and only works in <strong>simulator</strong>.</span>
+                        </div>
                     </div>
-                    <a href="https://drive.google.com/file/d/1zDqYyvkPHkpzFRaW153sAD3Agxpi5458/view?usp=sharing" class="download-btn secondary" target="_blank">
+                    <a href="https://drive.google.com/file/d/12pRvAcHK1TMWRxrcYVZYG31caCXx4S7C/view?usp=share_link" class="download-btn secondary" target="_blank">
                         <i data-lucide="external-link" size="18"></i> View Samples
                     </a>
                 </div>
@@ -582,7 +586,7 @@ Pod::Spec.new do |s|
   s.author           = { 'Your Team' => 'dev@yourcompany.com' }
   s.source           = { :path => '.' } # Points to the local folder
 
-  s.ios.deployment_target = '16.1'
+  s.ios.deployment_target = '15.0'
 
   # 1. Link your Flutter frameworks
   # This tells CocoaPods to include all xcframeworks inside the Frameworks folder
@@ -674,12 +678,27 @@ final class FlutterEngineManager {
     static let shared = FlutterEngineManager()
 
     let engine: FlutterEngine
-
+    private var methodChannel: FlutterMethodChannel?
+    
     private init() {
-        engine = FlutterEngine(name: "ShoppingGateEngine")
+        engine = FlutterEngine(name: "shoppinggate_engine")
 
         engine.run()
         GeneratedPluginRegistrant.register(with: engine);
+        
+        // Initialize channel
+        methodChannel = FlutterMethodChannel(
+            name: "shoppinggate_sdk/channel",
+            binaryMessenger: engine.binaryMessenger
+        )
+    }
+    
+    func sendUserData(mobile: String) {
+        let arguments: [String: Any] = [
+            "mobile": mobile
+        ]
+        
+        methodChannel?.invokeMethod("setUserData", arguments: arguments)
     }
 }</code></pre>
             </div>
@@ -718,10 +737,15 @@ class ViewController: UIViewController {
     }
     
     @objc func launchSDK() {
-        let flutterViewController =
-        FlutterViewController(engine: FlutterEngineManager.shared.engine,
-                              nibName: nil,
-                              bundle: nil)
+        FlutterEngineManager.shared.sendUserData(
+            mobile: "ENTER_USER_MOBILE_NUMBER_HERE"
+        )
+        
+        let flutterViewController = FlutterViewController(
+            engine: FlutterEngineManager.shared.engine,
+            nibName: nil,
+            bundle: nil
+        )
         self.navigationController?.pushViewController(flutterViewController, animated: true)
     }
 }</code></pre>
