@@ -398,6 +398,23 @@
             }
         }
     </style>
+    </head>
+    <script>
+    // Copy code block to clipboard
+    function copyCode(btn) {
+        // Find the nearest code block
+        const code = btn.closest('.code-wrap').querySelector('pre code');
+        if (!code) return;
+        // Create a temporary textarea to copy
+        const text = code.innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            btn.innerHTML = '<i data-lucide="check" size="14"></i> Copied';
+            setTimeout(() => {
+                btn.innerHTML = '<i data-lucide="copy" size="14"></i> Copy';
+            }, 1500);
+        });
+    }
+    </script>
 </head>
 
 <body>
@@ -438,7 +455,7 @@
         <header>
             <h1>ShoppingGate Flutter SDK For iOS Native</h1>
             <h3>iOS Native Integration Guide (Framework).</h3>
-            <p>Complete technical guide for embedding the ShoppingGate SDK into native iOS apps using Swift UIKit.</p>
+            <p>Complete technical guide for embedding the ShoppingGate SDK into native iOS apps using Swift SwiftUI.</p>
         </header>
 
         <section id="downloads">
@@ -473,13 +490,13 @@
                     <div>
                         <div style="margin-bottom: 1rem;"><i data-lucide="code-2" style="color: var(--primary)"></i></div>
                         <strong style="font-size: 1.1rem; display: block; margin-bottom: 0.5rem;">Reference iOS Project</strong>
-                        <p style="font-size: 0.85rem; color: var(--text-muted);">Xcode starter project with boilerplate UIKit implementation.</p>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Xcode starter project with boilerplate SwiftUI implementation.</p>
                         <div style="background: rgba(245, 158, 11, 0.12); border-left: 4px solid #f59e0b; padding: 0.75rem 1rem; border-radius: 7px; margin-top: 0.7rem; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: flex-start; gap: 8px;">
                             <i data-lucide="alert-triangle" size="16" style="color: #f59e0b; margin-top: 2px;"></i>
                             <span>Reference project is made with <strong>debug build</strong> and only works in <strong>simulator</strong>.</span>
                         </div>
                     </div>
-                    <a href="https://drive.google.com/file/d/12pRvAcHK1TMWRxrcYVZYG31caCXx4S7C/view?usp=share_link" class="download-btn secondary" target="_blank">
+                    <a href="https://drive.google.com/file/d/1OZ70lStOseukWVDpJXLlc7aeC3PaS4YZ/view?usp=share_link" class="download-btn secondary" target="_blank">
                         <i data-lucide="external-link" size="18"></i> View Samples
                     </a>
                 </div>
@@ -513,8 +530,10 @@
             <h2>2. API & Required Parameters</h2>
             <p>To initialize the SDK, you must have the following configuration parameters ready:</p>
             <div class="file-tree">
-                <span style="color: var(--primary)">●</span> <strong>Google Maps API Key:</strong> Required for location services.<br>
-                <span style="color: var(--primary)">●</span> <strong>User Mobile Number:</strong> Session authentication.
+                <span style="color: var(--primary)">●</span> <strong>Mobile Number:</strong> User mobile number (without +). </br>
+                <span style="color: var(--primary)">●</span> <strong>Country Code:</strong> Example: +91, +966.</br>
+                <span style="color: var(--primary)">●</span> <strong>Environment:</strong> Development or Production.</br>
+                <span style="color: var(--primary)">●</span> <strong>Language:</strong> en or ar.
             </div>
 
             <!-- <div class="callout">
@@ -534,12 +553,12 @@
                 │   ├── FlutterSDK.podspec <br>
                 │   └── Frameworks/ <br>
                 │       └── *.xcframework files <br>
-                ├── ShoppingGateSDKDemo/ <br>
+                ├── TravelSDKiOSDemo/ <br>
                 ├── Podfile <br>
                 ├── Podfile.lock <br>
                 ├── Pods/ <br>
-                ├── ShoppingGateSDKDemo.xcodeproj <br>
-                └── ShoppingGateSDKDemo.xcworkspace
+                ├── TravelSDKiOSDemo.xcodeproj <br>
+                └── TravelSDKiOSDemo.xcworkspace
             </div>
 
             <div class="callout">
@@ -662,91 +681,357 @@ end
 
         <section id="implementation">
             <h2>6. Launching the SDK</h2>
-            <p>Implement FlutterViewController to launch the ShoppingGate SDK.</p>
 
-            <h3>A. FlutterEngineManager Setup</h3>
+            <h3>A. Method Channel & Configuration Implementation</h3>
             <div class="code-wrap">
                 <div class="code-header">
-                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">FlutterViewController.swift</span></div>
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">SgTravelNative.swift</span></div>
                     <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
                 </div>
-                <pre><code class="language-swift">import UIKit
-import Flutter
+                <pre><code class="language-swift">import Flutter
 import FlutterPluginRegistrant
+import UIKit
 
-final class FlutterEngineManager {
-    static let shared = FlutterEngineManager()
+final class SgTravelNative: NSObject {
+    static let shared = SgTravelNative()
 
-    let engine: FlutterEngine
-    private var methodChannel: FlutterMethodChannel?
-    
-    private init() {
-        engine = FlutterEngine(name: "shoppinggate_engine")
-
-        engine.run()
-        GeneratedPluginRegistrant.register(with: engine);
-        
-        // Initialize channel
-        methodChannel = FlutterMethodChannel(
-            name: "shoppinggate_sdk/channel",
-            binaryMessenger: engine.binaryMessenger
-        )
+    struct Request {
+        let phoneNumber: String
+        let countryCode: String
+        let environment: String
+        let language: String
     }
-    
-    func sendUserData(mobile: String) {
-        let arguments: [String: Any] = [
-            "mobile": mobile
+
+    private struct ChannelCall {
+        let method: String
+        let arguments: Any?
+    }
+
+    private enum NativeError: LocalizedError {
+        case missingInitialData
+        case invalidArgument
+        case invalidEnvironment
+        case missingPresenter
+
+        var errorDescription: String? {
+            switch self {
+            case .missingInitialData:
+                return "Initialize request not found. Call SgTravelNative.initialize first."
+            case .invalidArgument:
+                return "Required keys: phoneNumber, countryCode, environment, language"
+            case .invalidEnvironment:
+                return "Use environment: development or production"
+            case .missingPresenter:
+                return "Unable to find a presenter for the Flutter host view controller."
+            }
+        }
+    }
+
+    private let channelName = "shoppingate_travel_sdk/channel"
+    private let engineName = "sg_travel_sdk_engine"
+
+    private let methodInitialize = "initialize"
+    private let methodOpenBookingFlow = "openBookingFlow"
+    private let methodOpenOrderFlow = "openOrderFlow"
+    private let methodHostReady = "hostReady"
+    private let methodSetUserData = "setUserData"
+    private let methodCloseSDK = "closeSDK"
+
+    private let keyPhone = "phoneNumber"
+    private let keyCountry = "countryCode"
+    private let keyEnvironment = "environment"
+    private let keyLanguage = "language"
+
+    private lazy var engine = FlutterEngine(name: engineName)
+    private var isEngineStarted = false
+    private var isInitialized = false
+    private var isFlutterReady = false
+    private var latestData: [String: Any] = [:]
+    private var pendingCalls: [ChannelCall] = []
+    private var methodChannel: FlutterMethodChannel?
+
+    private override init() {
+        super.init()
+    }
+
+    func initialize(request: Request) throws {
+        let normalized = try normalize(request: request)
+        latestData = normalized
+        isInitialized = true
+
+        ensureEngineStarted()
+        dispatchOrQueue(method: methodInitialize, arguments: normalized)
+    }
+
+    func openBooking() throws {
+        //destroy()
+        try ensureInitialized()
+        ensureEngineStarted()
+        try presentHost()
+        dispatchOrQueue(method: methodOpenBookingFlow, arguments: nil)
+    }
+
+    func openOrder() throws {
+        try ensureInitialized()
+        ensureEngineStarted()
+        try presentHost()
+        dispatchOrQueue(method: methodOpenOrderFlow, arguments: nil)
+    }
+
+    func destroy() {
+        methodChannel?.setMethodCallHandler(nil)
+        methodChannel = nil
+        isInitialized = false
+        isFlutterReady = false
+        pendingCalls.removeAll()
+        latestData.removeAll()
+
+        if isEngineStarted {
+            engine.destroyContext()
+        }
+
+        isEngineStarted = false
+    }
+
+    private func ensureEngineStarted() {
+        guard !isEngineStarted else { return }
+
+        _ = engine.run(withEntrypoint: "travelSdkHostEntryPoint")
+        GeneratedPluginRegistrant.register(with: engine)
+        attachChannel(to: engine)
+        isEngineStarted = true
+    }
+
+    private func attachChannel(to engine: FlutterEngine) {
+        let channel = FlutterMethodChannel(name: channelName, binaryMessenger: engine.binaryMessenger)
+        methodChannel = channel
+        isFlutterReady = false
+
+        channel.setMethodCallHandler { [weak self] call, result in
+            self?.handleMethodCall(call, result: result)
+        }
+    }
+
+    private func handleMethodCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        switch call.method {
+        case methodHostReady:
+            isFlutterReady = true
+            result(nil)
+            flushPendingCallsIfReady()
+
+        case methodSetUserData:
+            guard let raw = call.arguments as? [AnyHashable: Any] else {
+                result(FlutterError(code: "INVALID_ARGUMENT", message: NativeError.invalidArgument.errorDescription, details: nil))
+                return
+            }
+
+            do {
+                latestData = try normalize(payload: raw)
+                result(nil)
+            } catch {
+                result(FlutterError(code: "INVALID_ARGUMENT", message: error.localizedDescription, details: nil))
+            }
+
+        case methodCloseSDK:
+            result(nil)
+            // Dismiss the Flutter host view controller
+            topViewController()?.dismiss(animated: true)
+
+        default:
+            result(FlutterMethodNotImplemented)
+        }
+    }
+
+    private func dispatchOrQueue(method: String, arguments: Any?) {
+        guard let methodChannel, isFlutterReady else {
+            pendingCalls.append(ChannelCall(method: method, arguments: arguments))
+            return
+        }
+
+        methodChannel.invokeMethod(method, arguments: arguments)
+    }
+
+    private func flushPendingCallsIfReady() {
+        guard let methodChannel, isFlutterReady, !pendingCalls.isEmpty else { return }
+
+        let queuedCalls = pendingCalls
+        pendingCalls.removeAll()
+
+        queuedCalls.forEach { call in
+            methodChannel.invokeMethod(call.method, arguments: call.arguments)
+        }
+    }
+
+    private func ensureInitialized() throws {
+        if !isInitialized {
+            throw NativeError.missingInitialData
+        }
+    }
+
+    private func presentHost() throws {
+        guard let presenter = topViewController() else {
+            throw NativeError.missingPresenter
+        }
+
+        if presenter is FlutterViewController || presenter.navigationController?.viewControllers.last is FlutterViewController {
+            return
+        }
+
+        let flutterViewController = FlutterViewController(engine: engine, nibName: nil, bundle: nil)
+        flutterViewController.title = "Travel SDK"
+        flutterViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
+            barButtonSystemItem: .close,
+            target: self,
+            action: #selector(dismissHost)
+        )
+
+        let navigationController = UINavigationController(rootViewController: flutterViewController)
+        navigationController.modalPresentationStyle = .fullScreen
+        presenter.present(navigationController, animated: true)
+    }
+
+    @objc
+    private func dismissHost() {
+        topViewController()?.dismiss(animated: true)
+    }
+
+    private func topViewController(
+        from rootViewController: UIViewController? = UIApplication.shared
+            .connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .flatMap { $0.windows }
+            .first(where: \ .isKeyWindow)?.rootViewController
+    ) -> UIViewController? {
+        if let navigationController = rootViewController as? UINavigationController {
+            return topViewController(from: navigationController.visibleViewController)
+        }
+
+        if let tabBarController = rootViewController as? UITabBarController,
+           let selectedViewController = tabBarController.selectedViewController {
+            return topViewController(from: selectedViewController)
+        }
+
+        if let presentedViewController = rootViewController?.presentedViewController {
+            return topViewController(from: presentedViewController)
+        }
+
+        return rootViewController
+    }
+
+    private func normalize(request: Request) throws -> [String: Any] {
+        try normalize(payload: [
+            keyPhone: request.phoneNumber,
+            keyCountry: request.countryCode,
+            keyEnvironment: request.environment,
+            keyLanguage: request.language,
+        ])
+    }
+
+    private func normalize(payload: [AnyHashable: Any]) throws -> [String: Any] {
+        let phoneNumber = try readRequiredString(payload, key: keyPhone)
+        let countryCode = try readRequiredString(payload, key: keyCountry)
+        let environment = try readRequiredString(payload, key: keyEnvironment)
+        let language = try readRequiredString(payload, key: keyLanguage)
+
+        guard environment == "development" || environment == "production" else {
+            throw NativeError.invalidEnvironment
+        }
+
+        return [
+            keyPhone: phoneNumber,
+            keyCountry: countryCode,
+            keyEnvironment: environment,
+            keyLanguage: language,
         ]
-        
-        methodChannel?.invokeMethod("setUserData", arguments: arguments)
+    }
+
+    private func readRequiredString(_ payload: [AnyHashable: Any], key: String) throws -> String {
+        let value = (payload[key] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !value.isEmpty else {
+            throw NativeError.invalidArgument
+        }
+        return value
     }
 }</code></pre>
             </div>
 
-            <h3>B. ViewController Implementation</h3>
+            <h3>B. UI Implementation</h3>
+
+<div class="callout" style="background: rgba(16, 185, 129, 0.08); border-color: #10b981;">
+                <i data-lucide="info" size="20" style="color: #10b981"></i>
+                <p style="margin: 0;"><strong>Testing Note:</strong> <br/>
+                    Use below Phone number and country code for testing<br/>
+                    <strong>phoneNumber: 554433220</strong><br/>
+                    <strong>countryCode: +966</strong>
+                </p>
+            </div>
+
             <div class="code-wrap">
                 <div class="code-header">
-                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ViewController.swift</span></div>
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ContentView.swift</span></div>
                     <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
                 </div>
-                <pre><code class="language-swift">import UIKit
+                <pre><code class="language-swift">import SwiftUI
 
-class ViewController: UIViewController {
-    
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        
-        // Setup Launch Button
-        let launchButton = UIButton(type: .system)
-        launchButton.setTitle("Launch ShoppingGate", for: .normal)
-        launchButton.titleLabel?.font = .systemFont(ofSize: 18, weight: .semibold)
-        launchButton.backgroundColor = .systemIndigo
-        launchButton.setTitleColor(.white, for: .normal)
-        launchButton.layer.cornerRadius = 12
-        launchButton.translatesAutoresizingMaskIntoConstraints = false
-        launchButton.addTarget(self, action: #selector(launchSDK), for: .touchUpInside)
-        
-        view.addSubview(launchButton)
-        
-        NSLayoutConstraint.activate([
-            launchButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            launchButton.centerYAnchor.constraint(equalTo: view.centerYAnchor),
-            launchButton.widthAnchor.constraint(equalToConstant: 240),
-            launchButton.heightAnchor.constraint(equalToConstant: 50)
-        ])
+struct ContentView: View {
+    @State private var statusMessage = "SDK not initialized"
+    @State private var didAutoInitialize = false
+
+    private let request = SgTravelNative.Request(
+        phoneNumber: "554433220",
+        countryCode: "+966",
+        environment: "development",
+        language: "en"
+    )
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Shopping Gate Travel SDK")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Text(statusMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Button("Open Booking Flow") {
+                do {
+                    try SgTravelNative.shared.openBooking()
+                } catch {
+                    statusMessage = error.localizedDescription
+                }
+            }
+            .buttonStyle(.bordered)
+
+            Button("Open Order Flow") {
+                do {
+                    try SgTravelNative.shared.openOrder()
+                } catch {
+                    statusMessage = error.localizedDescription
+                }
+            }
+            .buttonStyle(.bordered)
+
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onAppear(perform: initializeSdkIfNeeded)
     }
-    
-    @objc func launchSDK() {
-        FlutterEngineManager.shared.sendUserData(
-            mobile: "ENTER_USER_MOBILE_NUMBER_HERE"
-        )
-        
-        let flutterViewController = FlutterViewController(
-            engine: FlutterEngineManager.shared.engine,
-            nibName: nil,
-            bundle: nil
-        )
-        self.navigationController?.pushViewController(flutterViewController, animated: true)
+
+    private func initializeSdkIfNeeded() {
+        guard !didAutoInitialize else { return }
+        didAutoInitialize = true
+
+        do {
+            try SgTravelNative.shared.initialize(request: request)
+            statusMessage = "You can open booking or orders now."
+        } catch {
+            statusMessage = error.localizedDescription
+        }
     }
-}</code></pre>
+}
+
+</code></pre>
             </div>
