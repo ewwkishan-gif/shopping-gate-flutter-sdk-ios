@@ -530,7 +530,7 @@
             <h2>2. API & Required Parameters</h2>
             <p>To initialize the SDK, you must have the following configuration parameters ready:</p>
             <div class="file-tree">
-                <span style="color: var(--primary)">●</span> <strong>Mobile Number:</strong> User mobile number (without +). </br>
+                <span style="color: var(--primary)">●</span> <strong>Mobile Number:</strong> User mobile number (without +91, +966). </br>
                 <span style="color: var(--primary)">●</span> <strong>Country Code:</strong> Example: +91, +966.</br>
                 <span style="color: var(--primary)">●</span> <strong>Environment:</strong> Development or Production.</br>
                 <span style="color: var(--primary)">●</span> <strong>Language:</strong> en or ar.
@@ -641,7 +641,7 @@ end
             </div>
         </section>
 
-        <section id="info-plist">
+        <!-- <section id="info-plist">
             <h2>5. Info.plist & Permissions</h2>
             <p>Add required permissions and Google Maps API Key to Info.plist</p>
 
@@ -677,18 +677,26 @@ end
 &lt;/dict&gt;
 &lt;/plist&gt;</code></pre>
             </div>
-        </section>
+        </section> -->
 
         <section id="implementation">
-            <h2>6. Launching the SDK</h2>
+            <h2>5. Launching the SDK</h2>
 
             <h3>A. Method Channel & Configuration Implementation</h3>
+            <p>Add this file to your iOS project:</p>
             <div class="code-wrap">
                 <div class="code-header">
                     <div class="code-dots"><span></span><span></span><span></span><span class="filename">SgTravelNative.swift</span></div>
                     <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
                 </div>
-                <pre><code class="language-swift">import Flutter
+                <pre><code class="language-swift">//
+//  SgTravelNative.swift
+//  TravelSDKiOSDemo
+//
+//  Created by Kishan Chotaliya on 13/03/26.
+//
+
+import Flutter
 import FlutterPluginRegistrant
 import UIKit
 
@@ -742,8 +750,8 @@ final class SgTravelNative: NSObject {
     private let keyEnvironment = "environment"
     private let keyLanguage = "language"
 
-    private lazy var engine = FlutterEngine(name: engineName)
-    private var isEngineStarted = false
+    // Changed to Optional so we can truly "destroy" and "recreate" it
+    private var engine: FlutterEngine?
     private var isInitialized = false
     private var isFlutterReady = false
     private var latestData: [String: Any] = [:]
@@ -760,46 +768,54 @@ final class SgTravelNative: NSObject {
         isInitialized = true
 
         ensureEngineStarted()
+        // Always queue initialization when calling initialize explicitly
         dispatchOrQueue(method: methodInitialize, arguments: normalized)
     }
 
     func openBooking() throws {
-        //destroy()
-        try ensureInitialized()
-        ensureEngineStarted()
+        try ensureReadyToOpen()
         try presentHost()
         dispatchOrQueue(method: methodOpenBookingFlow, arguments: nil)
     }
 
     func openOrder() throws {
-        try ensureInitialized()
-        ensureEngineStarted()
+        try ensureReadyToOpen()
         try presentHost()
         dispatchOrQueue(method: methodOpenOrderFlow, arguments: nil)
+    }
+    
+    /// Internal helper to check if we need to restart the engine and re-init
+    private func ensureReadyToOpen() throws {
+        guard isInitialized else { throw NativeError.missingInitialData }
+        
+        // If engine was destroyed, we restart it
+        if engine == nil {
+            ensureEngineStarted()
+            // Re-queue the initialization using stored data before opening the flow
+            dispatchOrQueue(method: methodInitialize, arguments: latestData)
+        }
     }
 
     func destroy() {
         methodChannel?.setMethodCallHandler(nil)
         methodChannel = nil
-        isInitialized = false
         isFlutterReady = false
         pendingCalls.removeAll()
-        latestData.removeAll()
 
-        if isEngineStarted {
+        if let engine = engine {
             engine.destroyContext()
         }
-
-        isEngineStarted = false
+        engine = nil
     }
 
     private func ensureEngineStarted() {
-        guard !isEngineStarted else { return }
+        guard engine == nil else { return }
 
-        _ = engine.run(withEntrypoint: "travelSdkHostEntryPoint")
-        GeneratedPluginRegistrant.register(with: engine)
-        attachChannel(to: engine)
-        isEngineStarted = true
+        let newEngine = FlutterEngine(name: engineName)
+        newEngine.run(withEntrypoint: "travelSdkHostEntryPoint")
+        GeneratedPluginRegistrant.register(with: newEngine)
+        attachChannel(to: newEngine)
+        self.engine = newEngine
     }
 
     private func attachChannel(to engine: FlutterEngine) {
@@ -834,8 +850,7 @@ final class SgTravelNative: NSObject {
 
         case methodCloseSDK:
             result(nil)
-            // Dismiss the Flutter host view controller
-            topViewController()?.dismiss(animated: true)
+            dismissHost() // Use the unified dismiss logic
 
         default:
             result(FlutterMethodNotImplemented)
@@ -843,7 +858,7 @@ final class SgTravelNative: NSObject {
     }
 
     private func dispatchOrQueue(method: String, arguments: Any?) {
-        guard let methodChannel, isFlutterReady else {
+        guard let methodChannel = methodChannel, isFlutterReady else {
             pendingCalls.append(ChannelCall(method: method, arguments: arguments))
             return
         }
@@ -852,19 +867,13 @@ final class SgTravelNative: NSObject {
     }
 
     private func flushPendingCallsIfReady() {
-        guard let methodChannel, isFlutterReady, !pendingCalls.isEmpty else { return }
+        guard let methodChannel = methodChannel, isFlutterReady, !pendingCalls.isEmpty else { return }
 
         let queuedCalls = pendingCalls
         pendingCalls.removeAll()
 
         queuedCalls.forEach { call in
             methodChannel.invokeMethod(call.method, arguments: call.arguments)
-        }
-    }
-
-    private func ensureInitialized() throws {
-        if !isInitialized {
-            throw NativeError.missingInitialData
         }
     }
 
@@ -877,6 +886,7 @@ final class SgTravelNative: NSObject {
             return
         }
 
+        guard let engine = engine else { return }
         let flutterViewController = FlutterViewController(engine: engine, nibName: nil, bundle: nil)
         flutterViewController.title = "Travel SDK"
         flutterViewController.navigationItem.leftBarButtonItem = UIBarButtonItem(
@@ -892,7 +902,10 @@ final class SgTravelNative: NSObject {
 
     @objc
     private func dismissHost() {
-        topViewController()?.dismiss(animated: true)
+        topViewController()?.dismiss(animated: true) { [weak self] in
+            // When the UI is hidden, destroy all connections and memory
+            self?.destroy()
+        }
     }
 
     private func topViewController(
@@ -952,7 +965,8 @@ final class SgTravelNative: NSObject {
         }
         return value
     }
-}</code></pre>
+}
+</code></pre>
             </div>
 
             <h3>B. UI Implementation</h3>
