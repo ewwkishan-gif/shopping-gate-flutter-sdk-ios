@@ -530,8 +530,8 @@
             <h2>2. API & Required Parameters</h2>
             <p>To initialize the SDK, you must have the following configuration parameters ready:</p>
             <div class="file-tree">
-                <span style="color: var(--primary)">●</span> <strong>Mobile Number:</strong> User mobile number (without +91, +966). </br>
-                <span style="color: var(--primary)">●</span> <strong>Country Code:</strong> Example: +91, +966.</br>
+                <span style="color: var(--primary)">●</span> <strong>Mobile Number:</strong> User mobile number (without +966). </br>
+                <span style="color: var(--primary)">●</span> <strong>Country Code:</strong> Example: +966.</br>
                 <span style="color: var(--primary)">●</span> <strong>Environment:</strong> Development or Production.</br>
                 <span style="color: var(--primary)">●</span> <strong>Language:</strong> en or ar.
             </div>
@@ -578,24 +578,7 @@
                     <div class="code-dots"><span></span><span></span><span></span><span class="filename">Podfile</span></div>
                     <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
                 </div>
-                <pre><code class="language-ruby">platform :ios, '16.1'
-
-target 'YourApp' do
-  use_frameworks!
-
-  # Local ShoppingGate SDK (includes Flutter engine and dependencies)
-  pod 'FlutterSDK', :path => './FlutterSDK'
-end</code></pre>
-            </div>
-
-            <h3 style="margin-top: 2rem;">Example ShoppingGateSDK.podspec</h3>
-            <div class="code-wrap">
-                <div class="code-header">
-                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ShoppingGateSDK/ShoppingGateSDK.podspec</span></div>
-                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
-                </div>
-                <pre><code class="language-ruby">
-Pod::Spec.new do |s|
+                <pre><code class="language-ruby">Pod::Spec.new do |s|
   s.name             = 'FlutterSDK'
   s.version          = '1.0.0'
   s.summary          = 'High-performance Flutter module for native iOS integration.'
@@ -615,13 +598,14 @@ Pod::Spec.new do |s|
   # This fixes the "Undefined Symbol" errors by downloading the actual SDKs
   s.dependency 'FirebaseAnalytics'
   s.dependency 'GoogleMaps'
+  s.dependency 'Adjust', '~> 5.5.4'
 
   # 3. Ensure the Linker Flag is set
   s.pod_target_xcconfig = { 'OTHER_LDFLAGS' => '-ObjC' }
   
   s.static_framework = true
-end    
-                </code></pre>
+end   
+</code></pre>
             </div>
 
             <p style="margin-top: 1.5rem;">After updating Podfile, run:</p>
@@ -641,64 +625,224 @@ end
             </div>
         </section>
 
-        <!-- <section id="info-plist">
-            <h2>5. Info.plist & Permissions</h2>
-            <p>Add required permissions and Google Maps API Key to Info.plist</p>
-
-            <div class="code-wrap">
-                <div class="code-header">
-                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">Info.plist</span></div>
-                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
-                </div>
-                <pre><code class="language-xml">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
-&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;
-&lt;plist version="1.0"&gt;
-&lt;dict&gt;
-    &lt;!-- Google Maps API Key --&gt;
-    &lt;key&gt;GMSApiKey&lt;/key&gt;
-    &lt;string&gt;YOUR_MAPS_KEY_HERE&lt;/string&gt;
-    
-    &lt;!-- Location Permissions --&gt;
-    &lt;key&gt;NSLocationWhenInUseUsageDescription&lt;/key&gt;
-    &lt;string&gt;We need your location to show nearby stores&lt;/string&gt;
-    
-    &lt;key&gt;NSLocationAlwaysAndWhenInUseUsageDescription&lt;/key&gt;
-    &lt;string&gt;We need your location to show nearby stores&lt;/string&gt;
-    
-    &lt;!-- Camera & Photo Library --&gt;
-    &lt;key&gt;NSCameraUsageDescription&lt;/key&gt;
-    &lt;string&gt;We need camera access to capture product photos&lt;/string&gt;
-    
-    &lt;key&gt;NSPhotoLibraryUsageDescription&lt;/key&gt;
-    &lt;string&gt;We need photo library access to select images&lt;/string&gt;
-    
-    &lt;key&gt;NSPhotoLibraryAddUsageDescription&lt;/key&gt;
-    &lt;string&gt;We need permission to save photos&lt;/string&gt;
-&lt;/dict&gt;
-&lt;/plist&gt;</code></pre>
-            </div>
-        </section> -->
-
         <section id="implementation">
             <h2>5. Launching the SDK</h2>
 
-            <h3>A. Method Channel & Configuration Implementation</h3>
-            <p>Add this file to your iOS project:</p>
+            <h3>A. Implementation Overview</h3>
+            <div class="callout" style="background: rgba(16, 185, 129, 0.08); border-color: #10b981;">
+                <i data-lucide="info" size="20" style="color: #10b981"></i>
+                <p style="margin: 0;"><strong>Testing Credentials:</strong> <br/>
+                    Use the following details for your sandbox environment:<br/>
+                    <br/>
+                    <strong>phoneNumber:</strong> 554433220<br/> 
+                    <strong>countryCode:</strong> +966<br/>
+                </p>
+            </div>
+
+            <div class="callout">
+                <i data-lucide="code-2" size="20"></i>
+                <div>
+                    <strong>Integration Steps:</strong>
+                    <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 0.95rem;">
+                        <li><strong>1. Core Bridge (SgTravelNative.swift):</strong> Create a new Swift file named <code>SgTravelNative.swift</code> and paste the provided singleton code. This class manages the Flutter Engine lifecycle, handles Method Channel communication, and provides the navigation logic for presenting the SDK views.</li>
+                        <li><strong>2. UI Entry Points (ContentView.swift):</strong> Implement two primary entry points in your UI: one for the <strong>Booking Flow</strong> (searching and booking) and one for <strong>Booking History/Orders</strong>. Use the <code>initialize</code> method with your specific credentials before calling the respective "open" methods.</li>
+                        <li><strong>3. Native Payment (PaymentView.swift):</strong> The payment UI is developed on the client side (native). When a user triggers a payment action, your native code must invoke the <code>invokePaymentInitiateMethod</code> via the bridge.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ContentView.swift</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-swift">import SwiftUI
+
+struct ContentView: View {
+    @State private var statusMessage = "SDK not initialized"
+    @State private var didAutoInitialize = false
+
+    private let request = SgTravelNative.Request(
+        phoneNumber: "554433220",
+        countryCode: "+966",
+        environment: "development",
+        language: "en"
+    )
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Shopping Gate Travel SDK")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Text(statusMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Button("Open Booking Flow") {
+                do {
+                    try SgTravelNative.shared.openBooking()
+                } catch {
+                    statusMessage = error.localizedDescription
+                }
+            }
+            .buttonStyle(.bordered)
+
+            Button("Open Order Flow") {
+                do {
+                    try SgTravelNative.shared.openOrder()
+                } catch {
+                    statusMessage = error.localizedDescription
+                }
+            }
+            .buttonStyle(.bordered)
+
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onAppear(perform: initializeSdkIfNeeded)
+    }
+
+    private func initializeSdkIfNeeded() {
+        guard !didAutoInitialize else { return }
+        didAutoInitialize = true
+
+        do {
+            try SgTravelNative.shared.initialize(request: request)
+            statusMessage = "You can open booking or orders now."
+        } catch {
+            statusMessage = error.localizedDescription
+        }
+    }
+}
+</code></pre>
+            </div>
+
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">PaymentView.swift</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-swift">import SwiftUI
+
+struct PaymentView: View {
+    @State var isPaymentInitiated: Bool = false
+    let amount: Double
+    let orderId: String?
+    let requestPaymentType: String?
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Payment Method")
+                    .font(.headline)
+                    .padding(.leading, 26)
+                Spacer()
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .resizable()
+                        .frame(width: 28, height: 28)
+                        .foregroundColor(.secondary)
+                        .padding(16)
+                }
+                .accessibilityLabel("Close")
+            }
+            .padding(.top, 8)
+            walletView
+                .padding(.top, 20)
+            Spacer()
+            footerView
+        }
+        .background(Color(.systemBackground))
+    }
+
+    private var walletView: some View {
+        HStack(alignment: .center, spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color("themeColor"), lineWidth: 1)
+                    .frame(width: 32, height: 32)
+                Image("ic_wallet")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Barq Wallet")
+                    .font(.headline)
+            }
+            Spacer()
+            Image("ic_selected")
+                .resizable()
+                .frame(width: 22, height: 22)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color("themeColor").opacity(0.5), lineWidth: 1)
+        )
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+    }
+
+    private var footerView: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack {
+                Text("Amount: \(String(format: "%.2f", amount))")
+                    .font(.headline)
+                Spacer()
+                Button(action: {
+                    isPaymentInitiated = true
+                    let transactionId = buildTransactionId(orderId: orderId)
+                    SgTravelNative.shared.invokePaymentInitiateMethod(arg: transactionId)
+                    // Auto-close native payment sheet after sending callback.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }) {
+                    Text("Pay Now")
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(Color("themeColor"))
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                .disabled(isPaymentInitiated)
+            }
+            .padding([.horizontal, .top], 16)
+            .padding(.bottom, 24)
+        }
+    }
+
+    private func buildTransactionId(orderId: String?) -> String {
+        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+        if let orderId = orderId, !orderId.isEmpty {
+            return "TXN_\(orderId)_\(timestamp)"
+        }
+        return "TXN_\(timestamp)"
+    }
+}
+</code></pre>
+            </div>
+
+            <h3>B. Method Channel Implementation</h3>
+
             <div class="code-wrap">
                 <div class="code-header">
                     <div class="code-dots"><span></span><span></span><span></span><span class="filename">SgTravelNative.swift</span></div>
                     <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
                 </div>
-                <pre><code class="language-swift">//
-//  SgTravelNative.swift
-//  TravelSDKiOSDemo
-//
-//  Created by Kishan Chotaliya on 13/03/26.
-//
-
+                <pre><code class="language-swift">import UIKit
+import SwiftUI
 import Flutter
 import FlutterPluginRegistrant
-import UIKit
 
 final class SgTravelNative: NSObject {
     static let shared = SgTravelNative()
@@ -713,6 +857,12 @@ final class SgTravelNative: NSObject {
     private struct ChannelCall {
         let method: String
         let arguments: Any?
+    }
+
+    private struct PaymentPayload {
+        let amount: Double
+        let orderId: String?
+        let requestPaymentType: String?
     }
 
     private enum NativeError: LocalizedError {
@@ -744,6 +894,8 @@ final class SgTravelNative: NSObject {
     private let methodHostReady = "hostReady"
     private let methodSetUserData = "setUserData"
     private let methodCloseSDK = "closeSDK"
+    private let methodPaymentInitiation = "invokePaymentInitiation"
+    private let methodContinueToPayment = "continueToPayment"
 
     private let keyPhone = "phoneNumber"
     private let keyCountry = "countryCode"
@@ -851,7 +1003,14 @@ final class SgTravelNative: NSObject {
         case methodCloseSDK:
             result(nil)
             dismissHost() // Use the unified dismiss logic
-
+            
+        case methodContinueToPayment:
+            let payload = parsePaymentPayload(call.arguments)
+            print("Received payment data: amount=\(payload.amount), orderId=\(payload.orderId ?? "nil")")
+            DispatchQueue.main.async {
+                self.presentPaymentScreen(payload: payload)
+            }
+            result(nil)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -965,87 +1124,51 @@ final class SgTravelNative: NSObject {
         }
         return value
     }
-}
-</code></pre>
-            </div>
 
-            <h3>B. UI Implementation</h3>
-
-<div class="callout" style="background: rgba(16, 185, 129, 0.08); border-color: #10b981;">
-                <i data-lucide="info" size="20" style="color: #10b981"></i>
-                <p style="margin: 0;"><strong>Testing Note:</strong> <br/>
-                    Use below Phone number and country code for testing<br/>
-                    <strong>phoneNumber: 554433220</strong><br/>
-                    <strong>countryCode: +966</strong>
-                </p>
-            </div>
-
-            <div class="code-wrap">
-                <div class="code-header">
-                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ContentView.swift</span></div>
-                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
-                </div>
-                <pre><code class="language-swift">import SwiftUI
-
-struct ContentView: View {
-    @State private var statusMessage = "SDK not initialized"
-    @State private var didAutoInitialize = false
-
-    private let request = SgTravelNative.Request(
-        phoneNumber: "554433220",
-        countryCode: "+966",
-        environment: "development",
-        language: "en"
-    )
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Shopping Gate Travel SDK")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                Text(statusMessage)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button("Open Booking Flow") {
-                do {
-                    try SgTravelNative.shared.openBooking()
-                } catch {
-                    statusMessage = error.localizedDescription
-                }
-            }
-            .buttonStyle(.bordered)
-
-            Button("Open Order Flow") {
-                do {
-                    try SgTravelNative.shared.openOrder()
-                } catch {
-                    statusMessage = error.localizedDescription
-                }
-            }
-            .buttonStyle(.bordered)
-
-            Spacer()
+    func invokePaymentInitiateMethod(arg: String) {
+        guard let methodChannel = methodChannel, isFlutterReady else { return }
+        methodChannel.invokeMethod(methodPaymentInitiation, arguments: arg)
+    }
+    
+    private func presentPaymentScreen(payload: PaymentPayload) {
+        guard let presenter = topViewController() else { return }
+        let paymentView = PaymentView(
+            amount: payload.amount,
+            orderId: payload.orderId,
+            requestPaymentType: payload.requestPaymentType
+        )
+        let hostingController = UIHostingController(rootView: paymentView)
+        hostingController.modalPresentationStyle = .formSheet
+        if let sheet = hostingController.sheetPresentationController {
+            sheet.detents = [.custom(resolver: { _ in 320 })]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 16
+            sheet.largestUndimmedDetentIdentifier = .medium
         }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear(perform: initializeSdkIfNeeded)
+        if #available(iOS 13.0, *) {
+            hostingController.isModalInPresentation = true // disables drag-to-dismiss
+        }
+        presenter.present(hostingController, animated: true)
     }
 
-    private func initializeSdkIfNeeded() {
-        guard !didAutoInitialize else { return }
-        didAutoInitialize = true
-
-        do {
-            try SgTravelNative.shared.initialize(request: request)
-            statusMessage = "You can open booking or orders now."
-        } catch {
-            statusMessage = error.localizedDescription
+    private func parsePaymentPayload(_ arguments: Any?) -> PaymentPayload {
+        if let mapPayload = arguments as? [String: Any] {
+            let amount = (mapPayload["total_amount"] as? NSNumber)?.doubleValue ?? 0.0
+            let orderId = mapPayload["order_id"].map { String(describing: $0) }
+            let requestPaymentType = mapPayload["request_payment_type"] as? String
+            return PaymentPayload(
+                amount: amount,
+                orderId: orderId,
+                requestPaymentType: requestPaymentType
+            )
         }
+
+        if let amount = (arguments as? NSNumber)?.doubleValue {
+            return PaymentPayload(amount: amount, orderId: nil, requestPaymentType: nil)
+        }
+
+        return PaymentPayload(amount: 0.0, orderId: nil, requestPaymentType: nil)
     }
 }
-
 </code></pre>
             </div>
