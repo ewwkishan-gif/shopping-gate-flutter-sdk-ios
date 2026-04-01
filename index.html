@@ -441,13 +441,11 @@
         <div class="nav-label">Configuration</div>
         <ul>
             <li><a href="#podfile">4. Podfile Configuration</a></li>
-            <li><a href="#info-plist">5. Info.plist & Permissions</a></li>
         </ul>
 
         <div class="nav-label">Usage</div>
         <ul>
-            <li><a href="#implementation">6. Implementation</a></li>
-            <li><a href="#troubleshooting">7. Troubleshooting</a></li>
+            <li><a href="#implementation">5. Implementation</a></li>
         </ul>
     </aside>
 
@@ -649,187 +647,6 @@ end
                         <li><strong>3. Native Payment (PaymentView.swift):</strong> The payment UI is developed on the client side (native). When a user triggers a payment action, your native code must invoke the <code>invokePaymentInitiateMethod</code> via the bridge.</li>
                     </ul>
                 </div>
-            </div>
-
-            <div class="code-wrap">
-                <div class="code-header">
-                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ContentView.swift</span></div>
-                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
-                </div>
-                <pre><code class="language-swift">import SwiftUI
-
-struct ContentView: View {
-    @State private var statusMessage = "SDK not initialized"
-    @State private var didAutoInitialize = false
-
-    private let request = SgTravelNative.Request(
-        phoneNumber: "554433220",
-        countryCode: "+966",
-        environment: "development",
-        language: "en"
-    )
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Shopping Gate Travel SDK")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                Text(statusMessage)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Button("Open Booking Flow") {
-                do {
-                    try SgTravelNative.shared.openBooking()
-                } catch {
-                    statusMessage = error.localizedDescription
-                }
-            }
-            .buttonStyle(.bordered)
-
-            Button("Open Order Flow") {
-                do {
-                    try SgTravelNative.shared.openOrder()
-                } catch {
-                    statusMessage = error.localizedDescription
-                }
-            }
-            .buttonStyle(.bordered)
-
-            Spacer()
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear(perform: initializeSdkIfNeeded)
-    }
-
-    private func initializeSdkIfNeeded() {
-        guard !didAutoInitialize else { return }
-        didAutoInitialize = true
-
-        do {
-            try SgTravelNative.shared.initialize(request: request)
-            statusMessage = "You can open booking or orders now."
-        } catch {
-            statusMessage = error.localizedDescription
-        }
-    }
-}
-</code></pre>
-            </div>
-
-            <div class="code-wrap">
-                <div class="code-header">
-                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">PaymentView.swift</span></div>
-                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
-                </div>
-                <pre><code class="language-swift">import SwiftUI
-
-struct PaymentView: View {
-    @State var isPaymentInitiated: Bool = false
-    let amount: Double
-    let orderId: String?
-    let requestPaymentType: String?
-    @Environment(\.presentationMode) var presentationMode
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Payment Method")
-                    .font(.headline)
-                    .padding(.leading, 26)
-                Spacer()
-                Button(action: {
-                    presentationMode.wrappedValue.dismiss()
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .resizable()
-                        .frame(width: 28, height: 28)
-                        .foregroundColor(.secondary)
-                        .padding(16)
-                }
-                .accessibilityLabel("Close")
-            }
-            .padding(.top, 8)
-            walletView
-                .padding(.top, 20)
-            Spacer()
-            footerView
-        }
-        .background(Color(.systemBackground))
-    }
-
-    private var walletView: some View {
-        HStack(alignment: .center, spacing: 16) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color("themeColor"), lineWidth: 1)
-                    .frame(width: 32, height: 32)
-                Image("ic_wallet")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 18, height: 18)
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Barq Wallet")
-                    .font(.headline)
-            }
-            Spacer()
-            Image("ic_selected")
-                .resizable()
-                .frame(width: 22, height: 22)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color("themeColor").opacity(0.5), lineWidth: 1)
-        )
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
-    }
-
-    private var footerView: some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack {
-                Text("Amount: \(String(format: "%.2f", amount))")
-                    .font(.headline)
-                Spacer()
-                Button(action: {
-                    isPaymentInitiated = true
-                    let transactionId = buildTransactionId(orderId: orderId)
-                    SgTravelNative.shared.invokePaymentInitiateMethod(arg: transactionId)
-                    // Auto-close native payment sheet after sending callback.
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                }) {
-                    Text("Pay Now")
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 10)
-                        .background(Color("themeColor"))
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                }
-                .disabled(isPaymentInitiated)
-            }
-            .padding([.horizontal, .top], 16)
-            .padding(.bottom, 24)
-        }
-    }
-
-    private func buildTransactionId(orderId: String?) -> String {
-        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
-        if let orderId = orderId, !orderId.isEmpty {
-            return "TXN_\(orderId)_\(timestamp)"
-        }
-        return "TXN_\(timestamp)"
-    }
-}
-</code></pre>
             </div>
 
             <h3>B. Method Channel Implementation</h3>
@@ -1168,6 +985,187 @@ final class SgTravelNative: NSObject {
         }
 
         return PaymentPayload(amount: 0.0, orderId: nil, requestPaymentType: nil)
+    }
+}
+</code></pre>
+            </div>
+
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">ContentView.swift</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-swift">import SwiftUI
+
+struct ContentView: View {
+    @State private var statusMessage = "SDK not initialized"
+    @State private var didAutoInitialize = false
+
+    private let request = SgTravelNative.Request(
+        phoneNumber: "554433220",
+        countryCode: "+966",
+        environment: "development",
+        language: "en"
+    )
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Shopping Gate Travel SDK")
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                Text(statusMessage)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Button("Open Booking Flow") {
+                do {
+                    try SgTravelNative.shared.openBooking()
+                } catch {
+                    statusMessage = error.localizedDescription
+                }
+            }
+            .buttonStyle(.bordered)
+
+            Button("Open Order Flow") {
+                do {
+                    try SgTravelNative.shared.openOrder()
+                } catch {
+                    statusMessage = error.localizedDescription
+                }
+            }
+            .buttonStyle(.bordered)
+
+            Spacer()
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onAppear(perform: initializeSdkIfNeeded)
+    }
+
+    private func initializeSdkIfNeeded() {
+        guard !didAutoInitialize else { return }
+        didAutoInitialize = true
+
+        do {
+            try SgTravelNative.shared.initialize(request: request)
+            statusMessage = "You can open booking or orders now."
+        } catch {
+            statusMessage = error.localizedDescription
+        }
+    }
+}
+</code></pre>
+            </div>
+
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">PaymentView.swift</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-swift">import SwiftUI
+
+struct PaymentView: View {
+    @State var isPaymentInitiated: Bool = false
+    let amount: Double
+    let orderId: String?
+    let requestPaymentType: String?
+    @Environment(\.presentationMode) var presentationMode
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Payment Method")
+                    .font(.headline)
+                    .padding(.leading, 26)
+                Spacer()
+                Button(action: {
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .resizable()
+                        .frame(width: 28, height: 28)
+                        .foregroundColor(.secondary)
+                        .padding(16)
+                }
+                .accessibilityLabel("Close")
+            }
+            .padding(.top, 8)
+            walletView
+                .padding(.top, 20)
+            Spacer()
+            footerView
+        }
+        .background(Color(.systemBackground))
+    }
+
+    private var walletView: some View {
+        HStack(alignment: .center, spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color("themeColor"), lineWidth: 1)
+                    .frame(width: 32, height: 32)
+                Image("ic_wallet")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Barq Wallet")
+                    .font(.headline)
+            }
+            Spacer()
+            Image("ic_selected")
+                .resizable()
+                .frame(width: 22, height: 22)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color("themeColor").opacity(0.5), lineWidth: 1)
+        )
+        .padding(.horizontal, 16)
+        .padding(.top, 4)
+    }
+
+    private var footerView: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack {
+                Text("Amount: \(String(format: "%.2f", amount))")
+                    .font(.headline)
+                Spacer()
+                Button(action: {
+                    isPaymentInitiated = true
+                    let transactionId = buildTransactionId(orderId: orderId)
+                    SgTravelNative.shared.invokePaymentInitiateMethod(arg: transactionId)
+                    // Auto-close native payment sheet after sending callback.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }) {
+                    Text("Pay Now")
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 10)
+                        .background(Color("themeColor"))
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                }
+                .disabled(isPaymentInitiated)
+            }
+            .padding([.horizontal, .top], 16)
+            .padding(.bottom, 24)
+        }
+    }
+
+    private func buildTransactionId(orderId: String?) -> String {
+        let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+        if let orderId = orderId, !orderId.isEmpty {
+            return "TXN_\(orderId)_\(timestamp)"
+        }
+        return "TXN_\(timestamp)"
     }
 }
 </code></pre>
