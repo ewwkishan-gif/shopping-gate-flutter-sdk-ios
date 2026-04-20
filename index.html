@@ -533,7 +533,8 @@
                 <span style="color: var(--primary)">●</span> <strong>Environment:</strong> Development or Production.</br>
                 <span style="color: var(--primary)">●</span> <strong>Language:</strong> en or ar.</br>
                 <span style="color: var(--primary)">●</span> <strong>Auth Code:</strong> Generated from the authentication API (expires in 5 minutes).</br>
-                <span style="color: var(--primary)">●</span> <strong>Host ID:</strong> Your application identifier (e.g., "barq").
+                <span style="color: var(--primary)">●</span> <strong>Host ID:</strong> Your application identifier (e.g., "barq").</br>
+                <span style="color: var(--primary)">●</span> <strong>User ID:</strong> Example: partner-abc-123.
             </div>
 
             <!-- <div class="callout">
@@ -698,6 +699,7 @@ end
     language: "en",
     auth_code: "5bd9f0fb-0c7a-4250-8b44-0b35e5a1a129", // From API response
     host_id: "barq" // Your host identifier
+    partnerUserId: "partner-abc-123" //Your user ID
 )
 
 try SgTravelNative.shared.initialize(request: request)</code></pre>
@@ -747,6 +749,7 @@ final class SgTravelNative: NSObject {
         let language: String = "en"
         var authCode: String = ""
         let host_id: String = "barq"
+        let partnerUserId: String = "1"
     }
 
     private struct ChannelCall {
@@ -797,6 +800,7 @@ final class SgTravelNative: NSObject {
     private let keyEnvironment = "environment"
     private let keyLanguage = "language"
     private let keyAuthCode = "authCode"
+    private let keyPartnerUserId = "partnerUserId"
 
     // Changed to Optional so we can truly "destroy" and "recreate" it
     private var engine: FlutterEngine?
@@ -994,6 +998,8 @@ final class SgTravelNative: NSObject {
             keyEnvironment: request.environment,
             keyLanguage: request.language,
             keyAuthCode: request.authCode,
+            keyPartnerUserId: request.partnerUserId
+            
         ])
     }
 
@@ -1003,7 +1009,8 @@ final class SgTravelNative: NSObject {
         let environment = try readRequiredString(payload, key: keyEnvironment)
         let language = try readRequiredString(payload, key: keyLanguage)
         let authCode = try readRequiredString(payload, key: keyAuthCode)
-
+        let partnerUserId = try readRequiredString(payload, key: keyPartnerUserId)
+        
         guard environment == "development" || environment == "production" else {
             throw NativeError.invalidEnvironment
         }
@@ -1014,6 +1021,7 @@ final class SgTravelNative: NSObject {
             keyEnvironment: environment,
             keyLanguage: language,
             keyAuthCode: authCode,
+            keyPartnerUserId: partnerUserId
         ]
     }
 
