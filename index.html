@@ -679,7 +679,7 @@ end
   "status": true,
   "message": "Auth code generated successfully",
   "data": {
-    "auth_code": "5bd9f0fb-0c7a-4250-8b44-0b35e5a1a129",
+    "auth_code": "**************",
     "expires_in": 300
   }
 }</code></pre>
@@ -693,13 +693,13 @@ end
                                     <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
                                 </div>
                                 <pre><code class="language-swift">let request = SgTravelNative.Request(
-    phoneNumber: "554433220",
-    countryCode: "+966",
+    phoneNumber: *********,
+    countryCode: ****,
     environment: "development",
     language: "en",
-    auth_code: "5bd9f0fb-0c7a-4250-8b44-0b35e5a1a129", // From API response
+    auth_code: *******************, // From API response
     host_id: "barq" // Your host identifier
-    partnerUserId: "partner-abc-123" //Your user ID
+    partnerUserId: "*********" //Your user ID
 )
 
 try SgTravelNative.shared.initialize(request: request)</code></pre>
@@ -743,13 +743,13 @@ final class SgTravelNative: NSObject {
     static let shared = SgTravelNative()
     
     class Request {
-        let phoneNumber: String = "554433220"
-        let countryCode: String = "+966"
+        let phoneNumber: String = "*********"
+        let countryCode: String = "****"
         let environment: String = "development"
         let language: String = "en"
         var authCode: String = ""
         let host_id: String = "barq"
-        let partnerUserId: String = "1"
+        let partnerUserId: String = "*********"
     }
 
     private struct ChannelCall {
