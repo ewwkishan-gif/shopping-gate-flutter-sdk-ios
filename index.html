@@ -718,13 +718,14 @@ try SgTravelNative.shared.initialize(request: request)</code></pre>
             <div class="callout">
                             <i data-lucide="code-2" size="20"></i>
                             <div>
-                                <strong>Integration Steps:</strong>
-                                <div style="margin: 10px 0 0 0; font-size: 0.95rem; padding-left: 0;">
-                                    <strong>1. Core Bridge (SgTravelNative.swift):</strong> Create a new Swift file named <code>SgTravelNative.swift</code> and paste the provided singleton code. This class manages the Flutter Engine lifecycle, handles Method Channel communication, and provides the navigation logic for presenting the SDK views.<br>
-                                    <strong>2. UI Entry Points (ContentView.swift):</strong> Implement two primary entry points in your UI: one for the <strong>Booking Flow</strong> (searching and booking) and one for <strong>Booking History/Orders</strong>. Use the <code>initialize</code> method with your specific credentials before calling the respective "open" methods.<br>
-                                    <strong>3. Native Payment (PaymentView.swift):</strong> The payment UI is developed on the client side (native). When a user triggers a payment action, your native code must invoke the <code>invokePaymentInitiateMethod</code> via the bridge.
-                                </div>
-                            </div>
+    <strong>Integration Steps:</strong>
+    <div style="margin: 10px 0 0 0; font-size: 0.95rem; padding-left: 0;">
+        <strong>1. SDK Setup (FlutterSDK):</strong> Download the FlutterSDK and paste it into your native project root as shown in the project structure.<br>
+        <strong>2. Core Bridge (SgTravelNative.swift):</strong> Create a new Swift file named <code>SgTravelNative.swift</code> and paste the provided singleton code. This class manages the Flutter Engine lifecycle, handles Method Channel communication, and provides the navigation logic for presenting the SDK views.<br>
+        <strong>3. UI Entry Points (ContentView.swift):</strong> Implement two primary entry points in your UI: one for the <strong>Booking Flow</strong> (searching and booking) and one for <strong>Booking History/Orders</strong>. Use the <code>initialize</code> method with your specific credentials before calling the respective "open" methods.<br>
+        <strong>4. Native Payment (PaymentView.swift):</strong> The payment UI is developed on the client side (native). When a user triggers a payment action, your native code must invoke the <code>invokePaymentInitiateMethod</code> via the bridge.
+    </div>
+</div>
             </div>
 
             <h3>B. Code Implementation</h3>
@@ -1064,6 +1065,9 @@ final class SgTravelNative: NSObject {
             let amount = (mapPayload["total_amount"] as? NSNumber)?.doubleValue ?? 0.0
             let orderId = mapPayload["order_id"].map { String(describing: $0) }
             let requestPaymentType = mapPayload["request_payment_type"] as? String
+            
+            //====>YOU_WILL_GET_VENDOR_NAME_HERE<====
+            let vendorName = mapPayload["vendor_name"] as? String
             return PaymentPayload(
                 amount: amount,
                 orderId: orderId,
