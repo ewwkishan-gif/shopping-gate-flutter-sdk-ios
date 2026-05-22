@@ -728,7 +728,76 @@ try SgTravelNative.shared.initialize(request: request)</code></pre>
 </div>
             </div>
 
-            <h3>B. Code Implementation</h3>
+            <h3>B. Google Maps API Key <span class="badge">Required</span></h3>
+            <p>The SDK uses Google Maps to display location-based screens. <strong>Maps will not load without a valid API key.</strong> You must call <code>GMSServices.provideAPIKey()</code> in your <code>AppDelegate</code> before the Flutter engine starts.</p>
+
+            <div class="callout" style="background: rgba(239, 68, 68, 0.08); border-color: #ef4444;">
+                <i data-lucide="map-pin" size="20" style="color: #ef4444"></i>
+                <div>
+                    <strong>This step is not optional.</strong> If the Maps API key is missing or invalid, all map screens inside the SDK will fail to render. Ensure the key has <strong>Maps SDK for iOS</strong> enabled in your Google Cloud Console and is restricted to your app's bundle identifier.
+                </div>
+            </div>
+
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">AppDelegate.swift</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-swift">import Flutter
+import UIKit
+import GoogleMaps
+
+@objc class AppDelegate: FlutterAppDelegate {
+
+    override func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
+    ) -> Bool {
+        // ✅ REQUIRED: Replace with your actual Google Maps API key.
+        // Maps screens inside the SDK will NOT load without this.
+        // Generate your key at: https://console.cloud.google.com/
+        // Enable: Maps SDK for iOS
+        // Restrict to: your app's bundle identifier
+        GMSServices.provideAPIKey("REPLACE_YOUR_MAP_API_KEY_HERE")
+
+        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    }
+}</code></pre>
+            </div>
+
+            <h3>C. Theme Configuration <span class="badge">Optional</span></h3>
+            <p>You can customize the SDK's appearance by setting a theme <strong>before</strong> calling <code>initialize</code>. Use the <code>setTheme(config:)</code> method with a <code>ThemeConfig</code> struct to pass your brand colors directly from native code.</p>
+
+            <div class="file-tree">
+                <span style="color: var(--primary)">●</span> <strong>primaryColor</strong> &nbsp;— Primary brand color used for buttons, highlights, and interactive elements. Hex format e.g. <code>"#FF6B35"</code><br>
+                <span style="color: var(--primary)">●</span> <strong>scaffoldBackground</strong> &nbsp;— Background color of the main scaffold/screen. Hex format e.g. <code>"#F5F5F5"</code><br>
+                <span style="color: var(--primary)">●</span> <strong>secondaryColor</strong> &nbsp;— Secondary color used for accents and secondary UI elements. Hex format e.g. <code>"#1D1C1C33"</code>
+            </div>
+
+            <div class="callout" style="background: rgba(245, 158, 11, 0.1); border-color: #f59e0b; margin-top: 2rem;">
+                <i data-lucide="alert-circle" size="20"></i>
+                <div>
+                    <strong>Important:</strong> <code>setTheme</code> must be called <strong>before</strong> <code>initialize</code>. If not called, the SDK will use its default theme. All color values must be in hex string format (e.g. <code>"#RRGGBB"</code> or <code>"#RRGGBBAA"</code>).
+                </div>
+            </div>
+
+            <div class="code-wrap">
+                <div class="code-header">
+                    <div class="code-dots"><span></span><span></span><span></span><span class="filename">Swift Example</span></div>
+                    <button class="copy-btn" onclick="copyCode(this)"><i data-lucide="copy" size="14"></i> Copy</button>
+                </div>
+                <pre><code class="language-swift">// Step 1: Set theme before initializing (optional)
+try SgTravelNative.shared.setTheme(config: SgTravelNative.ThemeConfig(
+    primaryColor: "#090909",
+    scaffoldBackground: "#0B8085",
+    secondaryColor: "#1D1C1C33"
+))
+
+// Step 2: Initialize as usual
+try SgTravelNative.shared.initialize(request: request)</code></pre>
+            </div>
+
+            <h3>D. Code Implementation</h3>
 
             <div class="code-wrap">
                 <div class="code-header">
@@ -751,6 +820,12 @@ final class SgTravelNative: NSObject {
         var authCode: String = ""
         let host_id: String = "barq"
         let partnerUserId: String = "*********"
+    }
+
+    struct ThemeConfig {
+        let primaryColor: String        // e.g. "#FF6B35"
+        let scaffoldBackground: String  // e.g. "#F5F5F5"
+        let secondaryColor: String
     }
 
     private struct ChannelCall {
@@ -803,6 +878,11 @@ final class SgTravelNative: NSObject {
     private let keyAuthCode = "authCode"
     private let keyPartnerUserId = "partnerUserId"
 
+    private let methodSetTheme = "setTheme"
+    private let keyPrimaryColor = "primaryColor"
+    private let keyScaffoldBackground = "scaffoldBackground"
+    private let keySecondaryColor = "secondaryColor"
+
     // Changed to Optional so we can truly "destroy" and "recreate" it
     private var engine: FlutterEngine?
     private var isInitialized = false
@@ -810,6 +890,7 @@ final class SgTravelNative: NSObject {
     private var latestData: [String: Any] = [:]
     private var pendingCalls: [ChannelCall] = []
     private var methodChannel: FlutterMethodChannel?
+    private var pendingThemeConfig: ThemeConfig?
 
     private override init() {
         super.init()
@@ -818,12 +899,19 @@ final class SgTravelNative: NSObject {
     func initialize(request: Request) throws {
         let normalized = try normalize(request: request)
         
-        latestData = normalized
+        // Merge theme into the payload if set
+        var payload = normalized
+        if let theme = pendingThemeConfig {
+            payload[keyPrimaryColor] = theme.primaryColor
+            payload[keyScaffoldBackground] = theme.scaffoldBackground
+            payload[keySecondaryColor] = theme.secondaryColor
+        }
+        
+        latestData = payload
         isInitialized = true
 
         ensureEngineStarted()
-        // Always queue initialization when calling initialize explicitly
-        dispatchOrQueue(method: methodInitialize, arguments: normalized)
+        dispatchOrQueue(method: methodInitialize, arguments: payload)
     }
 
     func openBooking() throws {
@@ -849,6 +937,10 @@ final class SgTravelNative: NSObject {
             // Re-queue the initialization using stored data before opening the flow
             dispatchOrQueue(method: methodInitialize, arguments: latestData)
         }
+    }
+
+    func setTheme(config: ThemeConfig) throws {
+        pendingThemeConfig = config
     }
 
     func destroy() {
@@ -1137,6 +1229,12 @@ struct ContentView: View {
         request.authCode = authCode
         
         do {
+            try SgTravelNative.shared.setTheme(config: SgTravelNative.ThemeConfig(
+                primaryColor: "#090909",
+                scaffoldBackground: "#0B8085",
+                secondaryColor: "#1D1C1C33"
+            ))
+            
             try SgTravelNative.shared.initialize(request: request)
             statusMessage = "You can open booking or orders now."
         } catch {
@@ -1341,3 +1439,34 @@ struct PaymentView: View {
 }
 </code></pre>
             </div>
+        </section>
+
+    </main>
+
+    <script>
+        lucide.createIcons();
+        document.querySelectorAll('pre code').forEach((el) => {
+            hljs.highlightElement(el);
+        });
+
+        // Active sidebar link on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('aside a');
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === '#' + current) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
